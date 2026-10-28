@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="__CSRF__">
+  <meta name="color-scheme" content="light">
+  <title>小温暖 · 本地聊天</title>
+  <link rel="stylesheet" href="/local_web.css">
+  <script src="/local_web.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar panel" aria-label="会话与说明">
+      <a class="brand" href="/" aria-label="小温暖本地聊天主页">
+        <span class="brand-mark" aria-hidden="true">暖</span>
+        <span><strong>小温暖</strong><small>本地聊天</small></span>
+      </a>
+
+      <section class="conversation-section">
+        <div class="section-heading"><h2>会话</h2><span id="conversation-count" class="subtle"></span></div>
+        <nav id="conversation-list" class="conversation-list" aria-label="选择会话">
+          <p class="empty-note">正在读取会话…</p>
+        </nav>
+      </section>
+
+      <section class="memory-note" aria-label="记忆与心跳说明">
+        <span class="eyebrow">一起生活的底色</span>
+        <h2>记忆共用，范围有迹</h2>
+        <p>长期记忆由不同会话共用，并保留来源范围，避免把群聊和私聊混为一谈。</p>
+        <div class="note-rule"></div>
+        <h3>自主心跳</h3>
+        <p>空闲时按计划检查活动。预计检查时间不是保证执行时刻，聊天和当前任务会影响安排。</p>
+      </section>
+
+      <div class="sidebar-footer"><span class="status-dot"></span><span>仅连接本机服务</span></div>
+    </aside>
+
+    <main class="chat-panel panel">
+      <header class="chat-header">
+        <div class="chat-title">
+          <span class="eyebrow">当前会话</span>
+          <h1 id="current-conversation">正在连接…</h1>
+        </div>
+        <div class="header-tools">
+          <span id="mode-badge" class="mode-badge">模式读取中</span>
+          <span id="connection-status" class="connection-status" role="status"><i class="status-dot"></i><span id="connection-label">连接中</span></span>
+          <a class="quiet-link" href="http://127.0.0.1:8767/" target="_blank" rel="noopener noreferrer">运行监视 ↗</a>
+          <a class="quiet-link" href="http://127.0.0.1:8768/" target="_blank" rel="noopener noreferrer">上下文 ↗</a>
+        </div>
+      </header>
+
+      <div id="error-banner" class="error-banner" role="alert" hidden></div>
+      <section id="message-list" class="message-list" aria-label="聊天记录" aria-live="polite">
+        <p class="empty-note">正在加载最近消息…</p>
+      </section>
+
+      <form id="composer" class="composer">
+        <label class="sr-only" for="message-input">发送消息给小温暖</label>
+        <textarea id="message-input" rows="2" maxlength="12000" placeholder="说点什么…（Enter 发送，Shift + Enter 换行）"></textarea>
+        <div class="composer-bottom">
+          <span class="composer-hint">消息会留在当前会话范围内</span>
+          <button id="send-button" class="send-button" type="submit"><span>发送</span><span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+    </main>
+
+    <aside class="right-rail" aria-label="活动与索引状态">
+      <section class="activity-card panel">
+        <div class="card-heading"><span class="card-icon" aria-hidden="true">✳</span><span class="eyebrow">正在做什么</span></div>
+        <h2 id="activity-goal">暂无自主活动</h2>
+        <p id="activity-status" class="activity-status">正在读取活动状态…</p>
+        <div class="activity-meta">
+          <div><span>下次检查</span><strong id="next-check">读取中…</strong></div>
+          <div><span>检查原因</span><strong id="check-reason">—</strong></div>
+        </div>
+        <div class="activity-controls">
+          <button id="pause-activity" class="small-button" type="button" data-action="pause">暂停</button>
+          <button id="resume-activity" class="small-button" type="button" data-action="resume">继续</button>
+        </div>
+      </section>
+
+      <section id="index-card" class="index-card panel" hidden>
+        <span class="eyebrow">记忆索引</span>
+        <h2>索引状态</h2>
+        <p id="index-status">—</p>
+      </section>
+
+      <section class="local-card panel">
+        <span class="eyebrow">本地连接</span>
+        <h2>只在这台电脑</h2>
+        <p>聊天窗口通过同源本地接口工作。页面不会载入第三方脚本或图片。</p>
+      </section>
+    </aside>
+  </div>
+</body>
+</html>

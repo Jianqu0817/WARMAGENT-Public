@@ -1,0 +1,47 @@
+{
+  "schema_version": "storage-governance/v1",
+  "implementation_status": "design_and_pure_planner_only",
+  "runtime_enabled": false,
+  "input_preconditions": {
+    "inventory": "Normalized inventory from verified manifests and pointer checks, not filenames or raw user paths.",
+    "published": "Previously successful current-pointer publication, not just an existing generation file.",
+    "candidate_complete": "Candidate restore checks succeeded and complete manifest was atomically published.",
+    "sizes": "Nonnegative integer bytes; used includes already-written staging bytes; unwritten_reserved excludes those bytes.",
+    "planner_limit": "Pure planner does not verify hashes, discover paths, enforce locks or recover files."
+  },
+  "scope": {
+    "projects": ["MYATRI-AstrBot", "WARMAGENT"],
+    "include": ["var/groups/*/domains/*/indexes/**", "var/backups/maintenance-repair-*/**", "var/backups/repair-audit-*/**"],
+    "exclude_from_gc": ["raw archive", "commit manifests", "runtime and delivery databases", "media", "configuration", "audit reports"],
+    "count_in_backup": "All files inside selected repair snapshots, including raw data and databases, count towards quota but are never individually pruned."
+  },
+  "budget": {
+    "unit": "bytes",
+    "low_watermark_bytes": 19327352832,
+    "soft_limit_bytes": 21474836480,
+    "hard_limit_bytes": 53687091200,
+    "physical_disk_floor_bytes": 2147483648,
+    "measurement": "GetCompressedFileSizeW for file data; metadata and unrelated volume use are handled by the separate free-space floor",
+    "reserve": "used_bytes + unwritten_reserved_bytes + worst_case_peak_bytes <= hard_limit_bytes",
+    "compression_ratio_for_admission": "Never estimate reservations from a historical compression ratio.",
+    "failure": "Defer derived writes, retain current index and raw memory, expose blocked_storage; do not claim refreshed retrieval."
+  },
+  "retention": {
+    "index": ["verified current", "one previous verified published generation", "explicit repair/rollback pins", "active reader/build leases"],
+    "missing_or_invalid_current": "block automatic generation reclamation",
+    "old_generation_grace_seconds": 3600,
+    "repair_backups": "two verified complete recovery points per project plus explicit pins",
+    "candidate_counts_as_slot": "only after verified and atomically marked complete",
+    "incomplete_or_legacy_backup": "count and report; do not infer restore eligibility or deduplication identity"
+  },
+  "backup_identity": {
+    "key": "digest(snapshot format + restore ABI + ordered file paths and content hashes + per-domain archive watermarks + verified index selections)",
+    "must_include": ["all recovery-state SQLite snapshots", "pending jobs", "tool protocols", "delivery and activity state", "routes and required config hashes"],
+    "must_not_use_alone": ["archive watermark", "archive sequence", "directory mtime", "job id"],
+    "index_mode_v1": "copy verified current generation only, never all historical generations",
+    "sqlite": "cold source under service locks; use SQLite backup API and quick_check; account staging bytes",
+    "reports": "separate append-only small audit records; reports do not imply a snapshot is post-repair"
+  },
+  "rollout": ["offline inventory and explainable plan", "cold repair snapshots and restore fixture", "generation I/O seam and retention", "shared budget and crash recovery", "monitor observation then bounded enablement"],
+  "safety_boundary": "No deletion, source migration, service restart, model request or live config change is performed by this preparation bundle. Existing deletion-policy rejection remains in force."
+}

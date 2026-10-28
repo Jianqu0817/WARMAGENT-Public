@@ -1,0 +1,50 @@
+{
+  "generation_base": {
+    "current": "g3", "pointer_valid": true, "pins": [], "in_flight": [],
+    "generations": [
+      {"id": "g1", "verified": true, "published": true, "publication_order": 1, "mature": true},
+      {"id": "g2", "verified": true, "published": true, "publication_order": 2, "mature": true},
+      {"id": "g3", "verified": true, "published": true, "publication_order": 3, "mature": true},
+      {"id": "orphan", "verified": true, "published": false, "publication_order": 0, "mature": true}
+    ]
+  },
+  "generation_cases": [
+    {"id": "keep_current_and_previous", "patch": {}, "expected": {"status": "planned", "reclaim": ["g1", "orphan"]}},
+    {"id": "honor_repair_pin", "patch": {"pins": ["g1"]}, "expected": {"status": "planned", "reclaim": ["orphan"]}},
+    {"id": "honor_reader_or_builder", "patch": {"in_flight": ["g1", "orphan"]}, "expected": {"status": "planned", "reclaim": []}},
+    {"id": "missing_current_blocks_gc", "patch": {"current": "missing"}, "expected": {"status": "blocked", "reclaim": []}},
+    {"id": "bad_pointer_blocks_gc", "patch": {"pointer_valid": false}, "expected": {"status": "blocked", "reclaim": []}},
+    {"id": "new_orphan_waits_for_grace", "patch": {}, "rows": {"orphan": {"mature": false}}, "expected": {"status": "planned", "reclaim": ["g1"]}},
+    {"id": "corrupt_current_blocks_gc", "patch": {}, "rows": {"g3": {"verified": false}}, "expected": {"status": "blocked", "reclaim": []}},
+    {"id": "corrupt_previous_is_not_a_fallback", "patch": {}, "rows": {"g2": {"verified": false}}, "expected": {"status": "planned", "reclaim": ["orphan"]}}
+  ],
+  "backup_base": {
+    "project": "AstrBot", "candidate_key": "state-C", "candidate_complete": false, "pins": [],
+    "backups": [
+      {"id": "b1", "project": "AstrBot", "complete": true, "verified": true, "key": "state-A", "order": 1},
+      {"id": "b2", "project": "AstrBot", "complete": true, "verified": true, "key": "state-B", "order": 2},
+      {"id": "partial", "project": "AstrBot", "complete": false, "verified": false, "key": "state-C", "order": 3},
+      {"id": "other", "project": "WARMAGENT", "complete": true, "verified": true, "key": "state-C", "order": 4}
+    ]
+  },
+  "backup_cases": [
+    {"id": "incomplete_cannot_rotate", "patch": {}, "expected": {"action": "stage", "reuse": null, "reclaim": []}},
+    {"id": "same_complete_state_reuses", "patch": {"candidate_key": "state-B"}, "expected": {"action": "reuse", "reuse": "b2", "reclaim": []}},
+    {"id": "completed_candidate_rotates_one", "patch": {"candidate_complete": true}, "expected": {"action": "publish", "reuse": null, "reclaim": ["b1"]}},
+    {"id": "pin_survives_rotation", "patch": {"candidate_complete": true, "pins": ["b1"]}, "expected": {"action": "publish", "reuse": null, "reclaim": []}},
+    {"id": "runtime_changed_despite_same_archive", "patch": {"candidate_key": "state-B-runtime-changed"}, "expected": {"action": "stage", "reuse": null, "reclaim": []}}
+  ],
+  "reservation_base": {
+    "used_bytes": 100, "unwritten_reserved_bytes": 0, "peak_bytes": 25,
+    "hard_limit_bytes": 150, "disk_free_bytes": 1000, "disk_floor_bytes": 10
+  },
+  "reservation_cases": [
+    {"id": "ordinary_write", "patch": {}, "expected": {"admitted": true, "reason": "reserved"}},
+    {"id": "exact_limit_allowed", "patch": {"peak_bytes": 50}, "expected": {"admitted": true, "reason": "reserved"}},
+    {"id": "one_byte_over_rejected", "patch": {"peak_bytes": 51}, "expected": {"admitted": false, "reason": "quota"}},
+    {"id": "other_writer_reservation_counted", "patch": {"unwritten_reserved_bytes": 30}, "expected": {"admitted": false, "reason": "quota"}},
+    {"id": "low_disk_rejects_even_below_quota", "patch": {"disk_free_bytes": 34}, "expected": {"admitted": false, "reason": "disk_free"}},
+    {"id": "compressed_old_file_not_subtracted_before_replace", "patch": {"used_bytes": 140, "peak_bytes": 11}, "expected": {"admitted": false, "reason": "quota"}},
+    {"id": "other_pending_bytes_count_towards_disk_floor", "patch": {"unwritten_reserved_bytes": 10, "disk_free_bytes": 44}, "expected": {"admitted": false, "reason": "disk_free"}}
+  ]
+}

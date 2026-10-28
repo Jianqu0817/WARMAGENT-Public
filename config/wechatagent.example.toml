@@ -1,0 +1,18 @@
+[wechatagent]
+# Installed reader/native workspace, relative to the WARMAGENT project.
+# The private runtime is copied locally, never downloaded by prepare.
+project_dir = "var/wechatagent-runtime/workspace"
+io_config = "state/wechat-io-config.json"
+native_token = "state/hook/native-token.txt"
+native_url = "http://127.0.0.1:30001"
+group_name = "填写测试群的完整名称"
+bot_nickname = "填写机器人群昵称"
+# Enable group reception, owner private reception, or both.
+group_enabled = true
+private_enabled = true
+# Populated only by an authenticated check, never inferred from nicknames.
+group_id = ""
+bot_id = ""
+private_id = ""
+# Must match [bridge].owner_id; launch passes that stable wxid into the client.
+owner_id = ""

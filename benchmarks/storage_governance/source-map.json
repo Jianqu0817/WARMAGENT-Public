@@ -1,0 +1,55 @@
+{
+  "schema_version": "storage-governance/source-map-v1",
+  "observed_date": "2026-10-26",
+  "scope": "read-only source interface inventory, no live-state scan",
+  "entries": [
+    {
+      "project": "WARMAGENT",
+      "path": "src/myatri/memory/index.py",
+      "sha256": "5075e433701518f76b250892ca39301d2a268812454f5161a1543a78f7267275",
+      "purpose": "generation write/read/publish/rollback seam"
+    },
+    {
+      "project": "WARMAGENT",
+      "path": "src/myatri/storage/archive.py",
+      "sha256": "fa95de524269a73afd1ea9cdf72f3e87d45f9d1f5ebd3186793a5c3e47afb31c",
+      "purpose": "archive writer lock; do not globally wrap raw writes"
+    },
+    {
+      "project": "WARMAGENT",
+      "path": "src/warmagent/bridge.py",
+      "sha256": "2b8677e5ade559d23396525f6cab3bf33fd815a6d79756410a10330dda2aff2f",
+      "purpose": "startup and runtime update callers"
+    },
+    {
+      "project": "WARMAGENT",
+      "path": "src/warmagent/maintenance.py",
+      "sha256": "ef58d4c8d7017bc88e2216e23cb0f0dcf5c3ceb680b605433006b0a66489ac63",
+      "purpose": "index stage checkpoint ordering"
+    },
+    {
+      "project": "WARMAGENT",
+      "path": "scripts/migrate_astrbot_state.py",
+      "sha256": "caec17e480c7c756627dff06dfe1590627efb97cbdac30a4cf492abe503ef8bd",
+      "purpose": "reuse snapshot method only; never run completed migration again"
+    },
+    {
+      "project": "MYATRI-AstrBot",
+      "path": "scripts/repair_maintenance.py",
+      "sha256": "4d4b77401225743ad7d2dec9a1ed13eedc43a6470861c0c27c166e3e2a39e538",
+      "purpose": "full copytree replacement point"
+    },
+    {
+      "project": "MYATRI-AstrBot",
+      "path": ".venv/Lib/site-packages/myatri/memory/index.py",
+      "sha256": "5075e433701518f76b250892ca39301d2a268812454f5161a1543a78f7267275",
+      "purpose": "observed installed index interface; do not patch site-packages"
+    },
+    {
+      "project": "MYATRI-AstrBot",
+      "path": "vendor/myatri-0.2.8-py3-none-any.whl",
+      "sha256": "b013f28e9fb8932ccf8b997e7deabd33786a180ebe99c03f5323c99e9d47f5cc",
+      "purpose": "vendor package requiring rebuilt release for future I/O seam"
+    }
+  ]
+}

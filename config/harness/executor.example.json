@@ -1,0 +1,14 @@
+{
+  "skills": [],
+  "mcpServers": [],
+  "biliHumanism": {
+    "enabled": true,
+    "dataDir": "var/bili-humanism",
+    "enablePersonalityLearning": false,
+    "enableDailyFetching": false,
+    "enableHistoryWrites": false,
+    "enableFavoriteWrites": false,
+    "enableLikeWrites": false,
+    "enableCoinWrites": false
+  }
+}

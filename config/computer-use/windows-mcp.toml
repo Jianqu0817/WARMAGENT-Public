@@ -1,0 +1,4 @@
+[control]
+enabled = true
+policy = "relaxed"
+idle_timeout_seconds = 10.0

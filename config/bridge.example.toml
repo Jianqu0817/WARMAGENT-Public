@@ -1,0 +1,147 @@
+[bridge]
+host = "127.0.0.1"
+port = 8766
+mode = "offline"
+shared_memory = true # One memory/persona/PAD library; channel working contexts remain separate.
+library_scope = "" # To reuse one existing archive, explicitly set its 32-character scope ID.
+allowed_groups = [] # Exact "platform instance ID|group ID" pairs.
+cooldown_seconds = 60 # Applies to both random and attention interjections, not direct addresses.
+random_reply_probability = 0.05 # Candidate rate, before the model may choose group_no_reply.
+# Speaker-bound follow-up opportunities, 1-4 messages within 2 minutes; optional, not mandatory replies.
+attention_followup_enabled = true
+attention_reply_probability = 0.35 # Decays with remaining rounds; no 95% floor.
+attention_ttl_seconds = 120
+recent_context_messages = 100 # Includes the current message and confirmed bot replies.
+dialogue_turns = 80 # Keep complete confirmed conversations separately from the listening window.
+cold_retention_days = 0 # Optional local compressed originals; 0 keeps the existing 200-message policy.
+random_reply_ttl_seconds = 45 # Expire delayed random interjections before delivery.
+memory_review_enabled = true # One support check per summary containing personal claims, never per chat reply.
+owner_id = "" # Set a stable account ID locally; names alone do not authenticate anyone.
+owner_name = "用户"
+token_file = "var/bridge-token.txt"
+state_root = "var/groups"
+persona_file = "config/persona/persona.md"
+engine_config = "config/engine.toml"
+
+# Live mode is a later explicit choice; the model key stays in Windows credentials.
+# Configure the WeChat adapter separately before using live mode.
+capture_requests = false
+
+# Chat projections only; archives, persona, reasoning effort and active task protocols stay intact.
+# Set enabled=false to restore the engine and bridge window settings above.
+[bridge.chat_context_savings]
+enabled = true
+dialogue_turns = 20
+recent_context_messages = 40
+recall_budget_chars = 10000
+recall_excerpt_chars = 1200
+summary_budget_bytes = 12000
+imported_history_budget_bytes = 16000
+group_summary_chars = 8000
+working_context_tokens = 80000 # Existing local UTF-8 admission ceiling; not provider-reported tokens.
+
+# Reuse stable persona + confirmed dialogue prefixes; fresh state/recall stays near the current turn.
+[bridge.cache_prefix]
+enabled = true
+history_block_turns = 4 # Drop old confirmed turns in blocks within the dialogue_turns ceiling.
+
+# Condensed expression guidance; persona/examples and structured tool contracts stay authoritative.
+[bridge.chat_style]
+enabled = false
+
+# 联网搜索（默认关闭）。开启后每个群独立一个 web.sqlite3 作为缓存与日限额账本。
+# 默认直连 DeepSeek Search API，复用聊天凭据，不需要 Node 或辅助模型请求。
+[bridge.web]
+enabled = false
+backend = "deepseek-api"
+# 只有显式 backend = "dsh" 时才需要 node_path / bin_path，旧只读封装保留。
+timeout_seconds = 25
+max_results = 3
+daily_limit = 40
+cache_ttl_hours = 24
+
+# First-stage computer actions: only a separately pinned owner account in live mode.
+# Set the same stable owner_id as [bridge], never a display name. Local paths only.
+[bridge.computer]
+enabled = false
+direct_enabled = true # Same Xiaowennuan calls native tools, without an executor LLM.
+vision_enabled = false # Setup-ComputerUse.cmd enables images for the official deepseek-flash route.
+autonomy_granted = true # Host grant for idle activities; also requires live + bound owner + enabled tools.
+agent_enabled = false
+permission_profile = "full" # Current Windows account; no path/application/command allowlist.
+native_config = "config/harness/executor.local.json"
+owner_id = ""
+node_path = ""
+runtime_root = ""
+
+# Setup-OpenCLI.cmd installs the pinned CLI + extension; uses its own visible browser profile.
+[bridge.opencli]
+enabled = false
+entrypoint = "var/opencli/runtime/node_modules/@jackwener/opencli/dist/src/main.js"
+browser_port = 9224
+timeout_seconds = 90
+preferred_domains = ["xiaohongshu.com", "xiaoheihe.cn", "zhihu.com", "tieba.baidu.com", "youtube.com"]
+bilibili_plugin_only = true
+
+[bridge.autonomy]
+enabled = true
+scan_interval_seconds = 1800 # Default idle checks/rest; explicit model wakeups keep their own deadlines.
+resume_after_chat_seconds = 180
+cost_quiet_hours = ["09:00-12:00", "14:00-17:00"] # Daily autonomous steps pause; chat/tools remain available.
+cost_quiet_timezone = "Asia/Shanghai"
+budget_limit_ratio = 0.8
+
+# Finite repair of known maintenance failures, using the original shared model budget.
+# Runtime window settings override this startup default and persist locally.
+[bridge.recovery]
+enabled = true
+
+# 主动发言（默认关闭，且默认影子模式：只生成草稿、不发送）。
+# 主动轮不写 role="user" 记录，因此不会进入人类证据链。
+[bridge.proactive]
+enabled = false
+shadow_mode = true
+kill_switch_path = "var/KILL_PROACTIVE"
+active_start = "09:00"
+active_end = "23:30"
+min_interval_minutes = 20.0
+max_interval_minutes = 90.0
+# >0 时按固定节奏判定（例如 10 分钟一次"有没有感兴趣的对话"）；0 保持随机采样。
+tick_interval_minutes = 0.0
+speech_cooldown_minutes = 15.0
+daily_limit = 10
+group_silence_hours = 2.0
+# >0 时群沉寂达到该小时数后，允许每天至多一次主动暖场。
+revive_silence_hours = 0.0
+# 感兴趣对话判定：窗口内消息数阈值 + 关键词/问句命中才插话。
+interest_burst_messages = 4
+interest_window_minutes = 10.0
+interest_keywords = []
+# 自发阅读材料：0 关闭。搜资料走 [bridge.web] 后端并共享其每日配额。
+web_scan_minutes = 0.0
+# 自发刷B站：0 关闭；需要可选依赖（uv sync --extra bili）。硬过滤在模型前。
+bili_scan_minutes = 0.0
+bili_scan_keywords = []
+bili_min_plays = 10000
+bili_max_age_days = 30.0
+budget_limit_ratio = 0.8
+candidate_ttl_seconds = 45.0
+
+# Optional existing Android device; Setup-Android.cmd configures the local copy.
+[bridge.android]
+enabled = false
+adb_path = ""
+serial = ""
+keyboard_ime = "com.android.adbkeyboard/.AdbIME"
+
+[bridge.memory]
+# Current records remain searchable; graph/theme generations merge separately.
+incremental_index_enabled = true
+index_merge_delay_seconds = 30
+embedding_cache_entries = 10000 # Also capped at 64 MiB of vector payload.
+
+# Owner-private WeChat: persist every input, answer one unread batch.
+[bridge.wechat_unread]
+enabled = true
+quiet_seconds = 1.5
+max_wait_seconds = 6.0

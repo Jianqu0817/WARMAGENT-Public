@@ -1,0 +1,13 @@
+# Optional: copy to model-router.toml to enable. Never put keys in this file.
+# Models/endpoints must be supported by the configured provider; no automatic probe.
+[model_router.gateways.reasoner]
+model = "deepseek-flash"
+endpoint = "https://api.deepseek.com"
+
+[model_router.routes]
+default = "base"
+vision = "base"
+reasoning = { gateway = "reasoner", failover = ["base"] }
+
+# Optional purpose override, e.g. autonomous_activity = "reasoning".
+[model_router.purpose_routes]

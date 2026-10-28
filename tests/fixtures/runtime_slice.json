@@ -1,0 +1,63 @@
+{
+  "scope_id": "synthetic-warmagent-runtime",
+  "memories": [
+    {
+      "scope": "group",
+      "id": "group_friday_meeting",
+      "occurred_at": "2026-10-20T11:00:00+00:00",
+      "fact_summary": "群里约定周五下午三点开读书会。",
+      "source_text": "我们周五下午三点开读书会，大家记一下。"
+    },
+    {
+      "scope": "group",
+      "id": "group_tea_initial",
+      "occurred_at": "2026-10-21T10:00:00+00:00",
+      "fact_summary": "用户最初说自己更喜欢绿茶。",
+      "source_text": "我平时更喜欢绿茶。"
+    },
+    {
+      "scope": "group",
+      "id": "group_tea_correction",
+      "occurred_at": "2026-10-22T10:00:00+00:00",
+      "fact_summary": "用户随后明确纠正：自己更喜欢红茶，而不是绿茶。",
+      "source_text": "我刚才说错了，我更喜欢红茶，不是绿茶。"
+    },
+    {
+      "scope": "private",
+      "id": "private_secret_word",
+      "occurred_at": "2026-10-23T10:00:00+00:00",
+      "fact_summary": "用户在私聊里把秋日暗号定为银杏。",
+      "source_text": "我们私聊的秋日暗号就用银杏吧。"
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "tea_preference_correction",
+      "from": "group_tea_initial",
+      "to": "group_tea_correction",
+      "type": "contradicts"
+    }
+  ],
+  "native_tool_receipt_scenario": {
+    "scope": "synthetic-warmagent-runtime/group",
+    "rounds": [
+      {
+        "turn_id": "turn-native-receipt-01",
+        "call_id": "call-native-receipt-01",
+        "tool": "read_file",
+        "arguments": {"path": "synthetic/notes.txt"},
+        "receipt_seed": "合成工具已读取本地文本并返回核对结果：文件名匹配，内容完整；未执行外部操作。",
+        "receipt_repeat_count": 42
+      },
+      {
+        "turn_id": "turn-native-receipt-02",
+        "call_id": "call-native-receipt-02",
+        "tool": "read_file",
+        "arguments": {"path": "synthetic/notes.txt"},
+        "receipt_seed": "合成工具已读取本地文本并返回核对结果：文件名匹配，内容完整；未执行外部操作。",
+        "receipt_repeat_count": 42
+      }
+    ],
+    "receipt_encoding": "正文 = receipt_seed 重复 receipt_repeat_count 次；供离线假 gateway 多轮回执测试使用。"
+  }
+}

@@ -1,0 +1,16 @@
+[onebot]
+enabled = false
+platform_id = "xiaowennuan-qq"
+bot_id = "" # Robot QQ number, as a quoted string.
+owner_id = "" # Your separate QQ account; explicitly bound to the existing owner.
+group_ids = []
+private_ids = [] # First version: only owner_id is allowed here.
+ws_host = "127.0.0.1"
+ws_port = 30021
+ws_path = "/ws"
+access_token = "" # Required when enabled; match NapCat's OneBot token, NOT its WebUI token.
+receipt_timeout = 15
+queue_size = 256
+# NapCat: WebSocket client / reverse Universal WS -> ws://127.0.0.1:30021/ws
+# Prefer array message format; disable self-message reporting.
+# bridge.allowed_groups examples: xiaowennuan-qq|group:123, xiaowennuan-qq|private:456
