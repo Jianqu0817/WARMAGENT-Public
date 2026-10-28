@@ -1,0 +1,14 @@
+{
+  "schema_version": "warmagent.compact.v1",
+  "authority": "Original archive records, revisions, manifests and source ACLs are unchanged",
+  "metadata": "generations/index_<id>.json, canonical digest; contains sidecar hashes, space identity and watermark",
+  "dense_vectors": "float64 npy, allow_pickle=false, read-only mmap",
+  "tfidf_vectors": "float64 CSR npz, no full-corpus dense list conversion during build",
+  "publication": ["write immutable sidecars", "write generation metadata", "compare archive sequence under writer", "publish current last"],
+  "failure": "Missing, corrupt, wrong-shape or wrong-space artifacts cannot be installed or used for rollback",
+  "compatibility": "CompactMemoryIndex reads legacy and compact; legacy reader needs rollback to a legacy generation before downgrade",
+  "quality": ["same visible refs and revisions", "same top-K refs", "float scores within 1e-13", "scope and historical isolation", "source closure retained"],
+  "evaluation": "Candidate ranking and presented evidence are measured independently of answer quality; no answer score without supplied citations",
+  "fixtures": ["benchmarks.memory_quality_dataset", "tests/test_compact_index.py", "tests/test_memory_evaluation.py"],
+  "production": "No forced migration, deletion, live model calls or service restart"
+}

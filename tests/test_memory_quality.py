@@ -52,7 +52,7 @@ def _store(tmp_path):
 
 
 def _recall(store, scope, tmp_path, *, cache, private=False, sender="owner-1"):
-    ids = IdentityRegistry(tmp_path / "identities.sqlite3", owner_id="owner-1", owner_name="小菅")
+    ids = IdentityRegistry(tmp_path / "identities.sqlite3", owner_id="owner-1", owner_name="阿星")
     recall = GroupRecall(store, None, ids, scope, scope_index_cache_enabled=cache)
     recall.shared_visibility = True
     recall.private_channel = private
@@ -62,7 +62,7 @@ def _recall(store, scope, tmp_path, *, cache, private=False, sender="owner-1"):
 
 def test_identity_self_report_requires_matching_source_speaker(tmp_path):
     store, scope, raw, _ = _store(tmp_path)
-    ids = IdentityRegistry(tmp_path / "ids.sqlite3", owner_id="owner-1", owner_name="小菅")
+    ids = IdentityRegistry(tmp_path / "ids.sqlite3", owner_id="owner-1", owner_name="阿星")
     envelope = raw["m-member"].payload["channel_source"]
     good = ids.validate_memory(scope, {"speaker_id": "member-2", "subject_id": "member-2",
         "attribution": "self_report", "evidence": [{"message_id": "m-member", "quote": "我把红色雨伞放在门口。"}]}, [envelope])
@@ -116,7 +116,7 @@ def test_switch_scope_and_sender_does_not_reuse_private_or_other_group_records(t
                 start=0, end=len(other_raw.body_markdown), quote=other_raw.body_markdown)],
             event_fingerprint="fact-other").model_dump())
     store.commit([other_raw, other_fact], "other-scope")
-    ids = IdentityRegistry(tmp_path / "identities.sqlite3", owner_id="owner-1", owner_name="小菅",
+    ids = IdentityRegistry(tmp_path / "identities.sqlite3", owner_id="owner-1", owner_name="阿星",
         owner_bindings=[{"platform_id": CASES["scope"][0], "bot_id": CASES["scope"][1], "sender_id": "owner-1"}])
     recall = GroupRecall(store, None, ids, scope_a, scope_index_cache_enabled=cache)
     recall.shared_visibility = True

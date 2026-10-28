@@ -15,6 +15,7 @@ from myatri.storage import ArchiveStore
 from .bounded_embeddings import BoundedOnnxEmbeddingProvider
 from .embedding_cache import cache_provider
 from .index_builder import GraphMemoryIndex
+from .compact_index import CompactMemoryIndex
 
 
 class IndexReadStore(ArchiveStore):
@@ -37,6 +38,10 @@ class CachedBuildIndex(GraphMemoryIndex):
         return prepared
 
 
+class CachedCompactBuildIndex(CompactMemoryIndex, CachedBuildIndex):
+    """Use the same SQLite embedding cache with compact generation storage."""
+
+
 def build(request):
     store = IndexReadStore(Path(request['archive_root']), request['agent_id'], request['user_id'])
     spec = request['provider']
@@ -46,7 +51,8 @@ def build(request):
         provider = None
     else:
         raise ValueError('Only local embedding providers are allowed in the index worker')
-    index = CachedBuildIndex(store, provider, **request['params'])
+    index_type = CachedCompactBuildIndex if request.get('compact_format', False) else CachedBuildIndex
+    index = index_type(store, provider, **request['params'])
     index.cache_entries = request['cache_entries']
     with threadpool_limits(limits=1):
         return asyncio.run(index.rebuild())

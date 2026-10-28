@@ -212,7 +212,14 @@ def create_app(bridge, *, initial_scope=None):
     app[LOCAL_CHAT] = chat
     app.add_routes([web.get('/', index), web.get('/api/state', state), web.post('/api/select', select),
         web.post('/api/messages', send), web.post('/api/receipts', receipt),
-        web.post('/api/activity', activity), web.get('/{name}', asset)])
+        web.post('/api/activity', activity)])
+    from .personal_view import install_personal_routes
+    def personal_scopes():
+        return [{'scope': scope, 'label': '本机私聊' if route.platform_id == 'xiaowennuan-local' else '微信私聊'}
+                for scope, route in chat.routes.items() if bridge._private_owner(route)]
+    install_personal_routes(app, bridge.root, Path(bridge.config.get('project_root', bridge.root.parent)),
+                            personal_scopes, 'local_chat_session', session)
+    app.router.add_get('/{name}', asset)
     return app
 
 

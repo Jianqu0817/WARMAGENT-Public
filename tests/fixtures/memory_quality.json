@@ -3,7 +3,7 @@
   "scope": ["fixture-platform", "fixture-bot", "fixture-room"],
   "other_scope": ["fixture-platform", "fixture-bot", "other-room"],
   "messages": [
-    {"id": "m-owner", "sender_id": "owner-1", "sender_name": "小菅", "conversation_kind": "group", "text": "我把蓝色钥匙放在书架。"},
+    {"id": "m-owner", "sender_id": "owner-1", "sender_name": "阿星", "conversation_kind": "group", "text": "我把蓝色钥匙放在书架。"},
     {"id": "m-member", "sender_id": "member-2", "sender_name": "阿青", "conversation_kind": "group", "text": "我把红色雨伞放在门口。"},
     {"id": "m-private", "sender_id": "member-2", "sender_name": "阿青", "conversation_kind": "private", "text": "我周末要去医院复诊。"}
   ],

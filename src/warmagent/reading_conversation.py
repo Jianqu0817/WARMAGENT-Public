@@ -315,8 +315,17 @@ class ReadingConversation(Conversation):
                 turn_stats['tool_catalog'] = catalog.state()
                 request_messages = tool_context.project(messages, tools, self.context.budget)
                 environment = getattr(self, 'environment_getter', None)
+                snapshot_state = environment() if environment else None
+                personal = {}
+                personal_getter = getattr(self, 'personal_context_getter', None)
+                if personal_getter:
+                    snapshot_state = dict(snapshot_state or {})
+                    snapshot_state.pop('personal', None)
+                    personal = await run_sync(personal_getter, source_text)
+                    if personal:
+                        snapshot_state['personal'] = personal
                 insert_current_context(request_messages, environment_message(loaded_tools=len(tools),
-                    snapshot=environment() if environment else None,
+                    snapshot=snapshot_state,
                     navigation=catalog.navigation() if self.enable_tools else None))
                 if report_only:
                     request_messages.append({'role': 'system', 'content': BATCH_REPORT_RULES})
@@ -471,6 +480,10 @@ class ReadingConversation(Conversation):
                         message_id=("answer_" + raw.record_id + ('_unread_' + digest(turn_stats['unread_keys'])[:12] if unread else '')), reply_to=raw.ref,
                         provider=response.provider, model=response.model, context_snapshot=snapshot,
                         reading_guard=reading_guard, reply_parts=reply_parts,
+                        personal_note_versions={note['note_id']: note['revision']
+                            for note in personal.get('notebook', {}).get('notes', [])
+                            if not note.get('truncated') and len(note['text']) >= 6
+                            and note['text'] in response.content},
                         **({"quality_review": self.reply_guard.last_check} if self.reply_guard is not None
                            and hasattr(self.reply_guard, "last_check") else {}))
                     timings["total_seconds"] = time.perf_counter()-started

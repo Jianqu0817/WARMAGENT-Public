@@ -33,7 +33,7 @@ from myatri.runtime.maintenance import Maintenance
 
 class Application:
     def __init__(self, root="var/atri", agent_id="atri", user_id="local", *, mode="offline",
-                 provider=None, embedding_provider=None, config=None):
+                 provider=None, embedding_provider=None, config=None, index_factory=MemoryIndex):
         self.root = Path(root).resolve()
         self.config = config or {}
         if self.config.get("outreach", {}).get("enabled"):
@@ -74,7 +74,7 @@ class Application:
                 (embedding.get("backend") == "auto" and (Path(embedding.get("path", "")) / "manifest.json").is_file())):
             from myatri.providers.local_onnx import LocalOnnxEmbeddingProvider
             embedding_provider = LocalOnnxEmbeddingProvider(Path(embedding["path"]))
-        self.index = MemoryIndex(self.store, embedding_provider)
+        self.index = index_factory(self.store, embedding_provider)
         self.recall = RecallService(self.store, self.index)
         self.states = TemporaryStates(self.store)
         self.emotions = EmotionState(self.store, self.config.get("emotion", {}))

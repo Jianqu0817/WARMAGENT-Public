@@ -298,9 +298,10 @@ def create_monitor_app(project):
         if request.headers.get("Sec-Fetch-Site") == "cross-site":
             raise web.HTTPForbidden()
         control = request.path in {"/api/runtime-settings","/api/computer-tasks","/api/activity", '/api/workspaces'}
+        private_read = request.path in {'/api/personal', '/api/personal/artifact'}
         if request.method != "GET" and not (request.method == "POST" and control):
             raise web.HTTPMethodNotAllowed(request.method, ["GET", "POST"] if control else ["GET"])
-        if control and not hmac.compare_digest(request.cookies.get("monitor_control_session", ""), session):
+        if (control or private_read) and not hmac.compare_digest(request.cookies.get("monitor_control_session", ""), session):
             raise web.HTTPForbidden()
         if request.method == "POST" and (origin != f"http://{request.host}" or request.headers.get("X-Monitor-Control") != "1"):
             raise web.HTTPForbidden()
@@ -398,6 +399,12 @@ def create_monitor_app(project):
     app.router.add_post('/api/computer-tasks',computer_tasks)
     app.router.add_get('/api/activity', activity)
     app.router.add_post('/api/activity', activity)
+    from .personal_view import install_personal_routes, personal_scopes
+    settings = _read_config(project / 'config/bridge.local.toml').get('bridge', {})
+    state_root = project / settings.get('state_root', 'var/groups')
+    install_personal_routes(app, state_root, project,
+        lambda: personal_scopes(state_root, settings.get('owner_id'), settings.get('allowed_groups', [])),
+        'monitor_control_session', session)
     return app
 
 

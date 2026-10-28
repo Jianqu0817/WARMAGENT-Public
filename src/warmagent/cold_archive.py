@@ -64,5 +64,6 @@ COLD_TOOL = {"type": "function", "function": {"name": "read_group_message",
     "description": "按本群消息ID读取本机保留期限内的真实原文，可分页核对短期摘要或引用。机器人输出仍非人类自述。",
     "parameters": {"type": "object", "additionalProperties": False, "required": ["message_id"],
         "properties": {"message_id": {"type": "string", "maxLength": 160},
-                       "offset": {"type": "integer", "minimum": 0},
-                       "limit": {"type": "integer", "minimum": 1, "maximum": 800}}}}}
+                       "offset": {"type": "integer", "minimum": 0, "description": "单条原文的起始字符位置"},
+                       "limit": {"type": "integer", "minimum": 1, "maximum": 800,
+                                 "description": "本次读取的字符数，不是消息条数；读最近N条请用read_recent_group_messages"}}}}}

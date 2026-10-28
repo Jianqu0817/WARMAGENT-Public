@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>小温暖 · 生活小本</title>
+  <link rel="stylesheet" href="/assets/personal/personal_view.css">
+  <script src="/assets/personal/personal_view.js" defer></script>
+</head>
+<body>
+  <header><div><small>小温暖</small><h1>生活小本</h1><p>最近在琢磨的事，随手留下的话，还有保存的文件。</p></div><a href="/">返回主页</a></header>
+  <form id="filters"><label>会话 <select id="scope" aria-label="会话"></select></label>
+    <label>随笔日期 <input id="day" type="date"></label><button type="submit">查看 / 刷新</button>
+    <button id="all-days" type="button">全部日期</button></form>
+  <p id="status" role="status">正在翻开小本…</p>
+  <main><section><h2>随笔</h2><p class="hint">这里有想法、疑问和感受；感受不等于已经发生的事实。日期以北京时间显示。</p>
+    <div id="notes"></div><nav><button id="newer" type="button">更新的随笔</button><button id="older" type="button">更早的随笔</button></nav></section>
+    <aside><section><h2>正在延续的兴趣</h2><p class="hint">也会保留暂放和完成的事情。不要求每天有成果。</p><div id="interests"></div></section>
+      <section><h2>保存的文件</h2><p class="hint">这是已登记的文件，不代表每个目标都已完成。点击下载对应版本。</p><div id="artifacts"></div></section></aside></main>
+</body></html>

@@ -51,6 +51,12 @@ ADB 手机需安装 Android platform-tools，在设备开启 USB 调试并确认
 
 ## 6. 记忆、角色与验证
 
+### 紧凑索引配置与安全回退
+
+公开桥接模板 [bridge.example.toml](../config/bridge.example.toml) 在 [bridge.memory] 中启用 compact_index_enabled = true。新部署按模板使用紧凑读写器；关闭或未设置该项时使用旧 MemoryIndex。新读写器可读取旧 JSON 代际，float64 .npy 向量以只读 mmap 加载，TF-IDF 使用稀疏 CSR .npz；旧读写器不能读取紧凑代际。
+
+若需切回旧读写器，先使用紧凑读写器将 current 回退到已验证的旧 JSON 代际，再关闭 compact_index_enabled 并切换旧代码。不要只关闭开关后直接启动旧读写器。紧凑读写器的发布、完整性校验与回退契约见[近期功能说明](FEATURES_2026-10-29.md)。
+
 新部署从空库开始。需要导入已有库时先备份，使用显式迁移脚本并保留来源；不要直接把他人的 state 或角色卡放进公开仓。
 
 编辑私人角色卡后，通过版本化人格更新机制或新部署导入；已有库不会因修改模板自动覆盖人格。首次启动会兼容补齐新表/列/索引，原档案仍保留版本与校验。

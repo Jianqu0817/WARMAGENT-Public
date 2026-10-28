@@ -1,5 +1,17 @@
 # 架构与修改地图
 
+## 2026-10-29 新增实现入口
+
+| 模块 | 职责 |
+| --- | --- |
+| [recent_chat.py](../src/warmagent/recent_chat.py) | 按消息条数读取本轮冻结的同群近期原文并分页 |
+| [personal_view.py](../src/warmagent/personal_view.py) / [personal_relevance.py](../src/warmagent/personal_relevance.py) | 私人生活小本只读页面与聊天相关材料选择 |
+| [compact_index.py](../src/warmagent/compact_index.py) / [compact_vectors.py](../src/warmagent/compact_vectors.py) | 紧凑代际格式、稀疏与稠密向量持久化 |
+| [memory_evaluation.py](../src/warmagent/memory_evaluation.py) | 检索评测，不生成回答 |
+| [app.py](../src/myatri/app.py) | 共享 Application 新增可选 index_factory 接缝 |
+
+除 Application 的可选 index_factory 外，CompactMemoryIndex、向量格式、评测路径与其余装配均在 WARMAGENT 适配层；缺省 Application 仍构造旧 MemoryIndex。
+
 同一主脑负责聊天与自主活动，原生调用已授权的 Harness 工具。渠道是输入/投递适配，主进程维护收件箱、活动、后台任务和 outbox；长期记忆共享时仍按渠道/说话人校验材料可见性。
 
 | 模块 | 职责与修改入口 |
@@ -27,4 +39,10 @@
 - 分享按准备时的 note_id/revision 关联，整条确认 sent 才记已分享；旧回执不能覆盖新笔记版本。
 - 默认 chat_first；用户安排、手动停止、暂停和省费时段继续约束调度，自己选择的目标可以调整并保留最近断点。
 
-公开版配置与本地个人资料分离；新功能验证使用临时合成库，不借用真实运行目录。
+群聊近期原文读取只使用当前轮投递时冻结的同群窗口，按消息条数分页；不搜索全部历史、不跨群补足，也不授予 Harness 或电脑控制权限。
+
+生活小本页面沿用本人私聊 scope 的只读投影；查看和下载不会领取投递、写入分享回执或唤醒模型。聊天只注入有话题关联的有界材料。
+
+紧凑索引把 JSON 行元数据与向量 sidecar 分开：float64 .npy 以只读 mmap 加载，TF-IDF 使用 CSR .npz。发布仍校验文件摘要、空间身份与水位，并沿用原单调 current 发布；构建失败保留原 current。紧凑读写器读取旧格式；旧读写器不读取紧凑格式，切回旧代码前须先由紧凑读写器将 current 回退到已验证的旧代际。
+
+公开版配置与本地个人资料分离；新功能验证使用临时合成库，不借用真实运行目录。功能细节见[近期功能说明](FEATURES_2026-10-29.md)，评测口径见[记忆评测说明](MEMORY_EVALUATION.md)。

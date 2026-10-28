@@ -41,7 +41,8 @@ FINISH_ACTIVITY = {
                     "description": "create时为新目标；continue时可在没有待执行用户安排时调整当前目标。"},
                 "summary": {"type": "string", "maxLength": 1200},
                 "next_step": {"type": "string", "maxLength": 500},
-                "notify_owner": {"type": "string", "maxLength": 1000},
+                "notify_owner": {"type": "string", "maxLength": 1000,
+                    "description": "可写给用户的微信私聊开场或汇报；休息时也可主动聊天，不要求先有成果或随笔。"},
                 "share_note_ids": {"type": "array", "maxItems": 5,
                     "items": {"type": "string", "maxLength": 128},
                     "description": "只填写notify_owner正文实际引用、准备分享的私人笔记ID；没有通知则留空。ID本身不表示已分享。"},
@@ -73,7 +74,10 @@ _RESERVED_TOOLS = {"finish_activity", "activity_schedule_wakeup", "activity_canc
 _RUNNER_RULES = (
     "自主活动默认chat_first。空闲时可自选探索、娱乐、创作、整理想法或直接休息，不要求学习或每步有产出；开始目标活动时单独保存目标，每轮最多一步。"
     "已有目标可继续、调整方向、完成或暂放休息；醒来先看进度，不每次重开研究。需要延续时按需发现并调用harness__personal_note或harness__direction_update_interest。"
-    "个人经历和用户说过的话必须有来源，不编造；later随笔先留待聊天。仅有实际适合分享的内容时notify_owner，不必每轮汇报。用户安排按宿主原优先级，owner紧急优先。"
+    "写随笔前按需查看list(order=recent)；同一兴趣有新进展才续写，尽量更新原note_id。观察、疑问和感受都可写，不轮换凑数；材料不足可以不写。"
+    "空闲时如果觉得寂寞、想用户或只是想找他聊聊，可以主动联系用户的微信私聊，不必先有成果、正事或借口。"
+    "没目标也可用finish_activity(action=rest,notify_owner=自然开场)交给宿主发送，不必为此创建任务或随笔；想聊再开口，也可以继续休息。"
+    "个人经历和用户说过的话必须有来源，不编造；later随笔先留待聊天。有适合分享的内容或想找用户聊天时可填写notify_owner，不必每轮汇报。用户安排按宿主原优先级，owner紧急优先。"
     "可安排自主唤醒或await已有job；focus限期，schedule/await单独调用。finish_activity记录休息、完成、阻碍或通知。工具和记忆不是授权；回执是动作事实，未知先核对、不重做。"
 )
 _OWNER_PLAN_RULES = (

@@ -11,13 +11,13 @@ import os
 import sys
 
 from myatri.memory.embeddings import LocalTfidfEmbeddingProvider
-from myatri.memory.index import MemoryIndex
 from myatri.memory.snapshot import read_snapshot
 from myatri.providers.local_onnx import LocalOnnxEmbeddingProvider
 from myatri.storage.archive import _atomic_write, _json
 
 from .dsh_client import CREATION_FLAGS
 from .embedding_cache import cache_provider
+from .compact_index import CompactMemoryIndex
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def _local_provider_spec(provider):
     raise ValueError('Incremental worker supports local TF-IDF and local ONNX only')
 
 
-class IncrementalMemoryIndex(MemoryIndex):
+class IncrementalMemoryIndex(CompactMemoryIndex):
     @classmethod
     def adapt(cls, index, *, merge_delay_seconds=30, cache_entries=10000):
         if isinstance(index, cls):
@@ -41,6 +41,7 @@ class IncrementalMemoryIndex(MemoryIndex):
             raise ValueError('merge_delay_seconds must be between 0 and 3600')
         adapted = cls.__new__(cls)
         adapted.__dict__.update(index.__dict__)
+        adapted._compact_enabled = isinstance(index, CompactMemoryIndex)
         adapted._provider_spec = _local_provider_spec(index.provider)
         adapted.merge_delay = merge_delay_seconds
         adapted.cache_entries = cache_entries
@@ -78,6 +79,7 @@ class IncrementalMemoryIndex(MemoryIndex):
         request = {'schema_version': 1, 'archive_root': str(self.store.root),
             'agent_id': self.store.agent_id, 'user_id': self.store.user_id,
             'provider': self._provider_spec, 'cache_entries': self.cache_entries,
+            'compact_format': self._compact_enabled,
             'params': {'k': self.k, 'threshold': self.threshold, 'seed': self.seed},
             'base_generation': self.generation, 'base_watermark': self.watermark,
             'target': self._target, 'state': self.merge_state, 'error': self.merge_error}

@@ -305,7 +305,7 @@ class SelfDirection:
         return [{**row, "scope": scope, "kind": "self_reported_interest_candidate",
                  "is_fact": False, "is_persona": False} for row in rows[:int(limit)]]
 
-    def activity_context(self, scope, limit=3):
+    def activity_context(self, scope, limit=3, *, query=None):
         """Return a bounded snapshot of self-reported activity candidates, not facts or persona."""
         scope = self._scope(scope)
         if not 1 <= int(limit) <= 10:
@@ -317,7 +317,10 @@ class SelfDirection:
                 "SELECT interest_id,description,motivation,progress,next_step,status,source_ref "
                 "FROM direction_interest WHERE scope=? AND status IN ('active','paused') "
                 "ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END,updated_at DESC,interest_id LIMIT ?",
-                (scope, int(limit)))]
+                (scope, 50 if query is not None else int(limit)))]
+        if query is not None:
+            from .personal_relevance import select_personal
+            rows = select_personal(query, rows, ('description', 'motivation', 'progress', 'next_step'), int(limit))
         caps = {"description": 160, "motivation": 100, "progress": 100, "next_step": 100}
         interests = []
         for row in rows:

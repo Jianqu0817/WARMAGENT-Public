@@ -17,6 +17,13 @@ from warmagent.index_graph import FastMemoryGraph
 class GraphMemoryIndex(MemoryIndex):
     """Use FastMemoryGraph during the oracle rebuild; later updates may add a sync seam."""
 
+    vector_index_type = ExactVectorIndex
+
+    def _write_generation(self, state, indexes):
+        checksum = digest(state)
+        _atomic_write(self.path / "generations" / f"{state['generation']}.json", _json({"data": state, "sha256": checksum}))
+        return checksum
+
     def _finish_rebuild(self, prepared: dict, batches: dict[str, EmbeddingBatch]) -> str:
         snapshot = prepared["snapshot"]
         records, record_map, cache = prepared["records"], prepared["record_map"], prepared["cache"]
@@ -52,7 +59,7 @@ class GraphMemoryIndex(MemoryIndex):
                 metadata_identity.add((entry["space_id"], entry["model"], entry["model_revision"], entry["dimension"], entry["normalization"]))
             if len(metadata_identity) != 1:
                 raise ValueError("Provider/model revision changed within one vector space")
-            indexes[view] = ExactVectorIndex(space_id, rows[0]["dimension"], rows)
+            indexes[view] = self.vector_index_type(space_id, rows[0]["dimension"], rows)
             providers[view] = provider
             provider_states[view] = provider.state() if isinstance(provider, LocalTfidfEmbeddingProvider) else {"type": "external", "space_id": space_id, "model": rows[0]["model"], "model_revision": rows[0]["model_revision"]}
         generation = f"index_{uuid.uuid4().hex}"
@@ -85,9 +92,8 @@ class GraphMemoryIndex(MemoryIndex):
                  "graph": graph.state(), "clusters": clustered.model_dump(mode="json"), "themes": themes,
                  "embedding_cache": cache, "cache_hits": hits, "limitations": limitations,
                  "params": {"k": self.k, "threshold": self.threshold, "seed": self.seed}}
-        checksum = digest(state)
         # Large immutable generation writes do not hold the archive writer.
-        _atomic_write(self.path / "generations" / f"{generation}.json", _json({"data": state, "sha256": checksum}))
+        checksum = self._write_generation(state, indexes)
         published = False
         with self.store._writer():
             pointer_path = self.path / "current.json"

@@ -186,6 +186,19 @@ async def test_empty_activity_can_rest_without_creating_goal_or_skipping_interva
 
 
 @pytest.mark.asyncio
+async def test_idle_can_start_a_chat_without_a_goal_or_notebook(tmp_path):
+    app = FakeApp([finish_response('idle-chat', 'rest', summary='想找用户聊聊',
+                                   notify_owner='这会儿有空吗，想找你聊两句。')])
+    messages = []
+    coordinator, _, _ = _build(tmp_path, app, notify_owner=messages.append)
+    result = await coordinator.tick(600)
+    assert result['reason'] == 'step'
+    assert messages == ['这会儿有空吗，想找你聊两句。']
+    assert coordinator._row()['goal'] == '' and coordinator._row()['status'] == 'empty'
+    assert len(app.provider.requests) == 1
+
+
+@pytest.mark.asyncio
 async def test_memory_projection_refreshes_after_restore_without_duplicate(tmp_path):
     app = FakeApp([{"content": "先记住当前想法。"}, {"content": "继续时看到了新想法。"}])
     versions = iter(["old-interest", "new-interest"])

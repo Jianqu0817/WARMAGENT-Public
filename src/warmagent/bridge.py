@@ -332,7 +332,7 @@ class Bridge:
             pending_jobs=lambda task: self.direct.background_jobs.list_jobs(self._owner_route().scope, task),
             workspace_view=self.workspace_view, outcome_sink=self._procedure_outcome)
         self.activity_runner.settings['environment_getter'] = lambda: {
-            key: value for key, value in self.environment_snapshot(self._owner_route().scope).items()
+            key: value for key, value in self.environment_snapshot(self._owner_route().scope, include_personal=False).items()
             if key != 'personal'}  # Activity memory already contains the fresh personal projection.
         self.activity_runner.settings['external_event_observed'] = lambda event: self.notifications.acknowledge_reference(
             event.get('scope', self._owner_route().scope), 'ai', 'job:' + event.get('job_id', ''))
@@ -424,6 +424,12 @@ class Bridge:
     async def _chat_handlers(self, raw):
         handlers = (await self._direct_chat_handlers(raw) if self.direct_enabled else self.computer.for_turn(raw))
         source = raw.payload.get('channel_source', {})
+        if (raw.author_kind == 'human' and source.get('conversation_kind', 'group') == 'group'
+                and f"{source.get('platform_id')}|{source.get('group_id')}" in self.config.get('allowed_groups', [])):
+            from .recent_chat import RECENT_CHAT_TOOL, read_recent_group_messages
+            scope = digest([source.get(k) for k in ('platform_id', 'bot_id', 'group_id')])[:32]
+            handlers['read_recent_group_messages'] = (RECENT_CHAT_TOOL,
+                lambda **kwargs: read_recent_group_messages(self.path, scope, raw.record_id, **kwargs))
         authorized = (raw.author_kind == 'human' and self.identities.owner_id
             and self._is_owner(source)
             and source.get('sender_id') != source.get('bot_id') and not source.get('self_initiated')
@@ -590,11 +596,16 @@ class Bridge:
         self.notifications.emit(scope=event['scope'], audience='ai', kind='job_completed',
             dedup_key=event['event_id'], payload_ref='job:' + event['job_id'])
 
-    def environment_snapshot(self, scope):
+    def environment_snapshot(self, scope, *, include_personal=True):
         stamp = time.monotonic()
         cached = self.environment_cache.get(scope)
         if cached and stamp - cached[0] < 2:
-            return cached[1]
+            snapshot = dict(cached[1])
+            if include_personal:
+                personal = self._personal_context(scope)
+                if personal:
+                    snapshot['personal'] = personal
+            return snapshot
         with closing(sqlite3.connect(self.activities.path)) as db:
             row = db.execute('SELECT status,focus_policy,focus_until,control_revision FROM idle_activity WHERE id=1').fetchone()
         with closing(sqlite3.connect(self.path)) as db:
@@ -605,18 +616,20 @@ class Bridge:
             'deliveries': deliveries, 'inbox': self.input_inbox.summary(scope),
             'device': 'host', 'device_busy': self.direct._execution_lock.locked(),
             'chat_tasks': self.chat_batches.view(scope)}
-        personal = self._personal_context(scope)
+        self.environment_cache[scope] = (stamp, snapshot)
+        snapshot = dict(snapshot)
+        personal = self._personal_context(scope) if include_personal else {}
         if personal:
             snapshot['personal'] = personal
-        self.environment_cache[scope] = (stamp, snapshot)
         return snapshot
 
-    def _personal_context(self, scope):
+    def _personal_context(self, scope, query=None):
         route = self.routes.get(scope, {})
         if route.get('conversation_kind') != 'private' or not self._private_owner(route):
             return {}
-        direction = self.self_direction.activity_context(scope, limit=2)
-        notebook = json.loads(self.personal_space.context(scope, limit=2, max_chars=700))
+        direction = self.self_direction.activity_context(scope, limit=2, query=query)
+        notebook = json.loads(self.personal_space.context(scope, limit=2, max_chars=700,
+                                                         query=query, recent=query is None))
         result = {}
         if direction['interests'] or direction['mode'] != 'working':
             result['direction'] = direction
@@ -769,14 +782,15 @@ class Bridge:
         body, parts = prepare_bubbles(text, app.conversation.context.reply_policy)
         if not body or not parts:
             return
-        state = self.activities.overview() or {}
+        state = self.activities._row()
         protocol = state.get('protocol') or {}
         pending = protocol.get('notification_pending') or {}
         note_ids = pending.get('note_ids', []) if pending.get('text') == text else []
-        optional_share = bool(note_ids) and not pending.get('owner_requested') and state.get('status') != 'blocked'
+        optional_share = (pending.get('text') == text and not pending.get('owner_requested')
+                          and state.get('status') != 'blocked')
         key = 'act_' + digest([route.scope, protocol.get('activity_id'),
             len(state.get('receipts', [])), body])[:48]
-        # Only casual notebook shares wait; owner task reports and failures retain
+        # Casual messages and notebook shares wait; owner reports and failures retain
         # their original delivery path. Deferred notes remain available next turn.
         with closing(sqlite3.connect(self.path)) as db:
             exists = db.execute('SELECT 1 FROM deliveries WHERE id=?', (key,)).fetchone()
@@ -797,10 +811,12 @@ class Bridge:
                 continue
             if not note['archived'] and note['shared_at'] is None:
                 note_versions[note_id] = note['revision']
-        if optional_share and not exists and not note_versions:
+        if optional_share and note_ids and not exists and not note_versions:
             return {'status': 'deferred', 'reason': 'no_unshared_note', 'note_ids': note_ids}
         if note_versions:
             envelope['personal_note_versions'] = note_versions
+        if optional_share:
+            envelope['personal_contact'] = True
         with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("INSERT OR IGNORE INTO deliveries "
                 "(id,scope,fingerprint,status,reply,reply_ref,updated,envelope,trigger_kind,received_at,reply_parts,sent_parts) "
@@ -813,11 +829,13 @@ class Bridge:
         return {'status': 'queued', 'delivery_id': key}
 
     def _confirm_personal_share(self, scope, envelope, sent_at):
-        versions = json.loads(envelope or '{}').get('personal_note_versions', {})
-        if not versions:
+        source = json.loads(envelope or '{}')
+        versions = source.get('personal_note_versions', {})
+        if not versions and not source.get('personal_contact'):
             return
         try:
-            self.personal_space.mark_shared(scope, list(versions), expected_revisions=versions)
+            if versions:
+                self.personal_space.mark_shared(scope, list(versions), expected_revisions=versions)
             self.self_direction.observe_share_receipt(scope, sent_at)
             self.environment_cache.pop(scope, None)
         except Exception:
@@ -948,6 +966,8 @@ class Bridge:
             )
             app = self.library_app if self.shared_memory else None
             if app is None:
+                from .compact_index import CompactMemoryIndex
+                from myatri.memory.index import MemoryIndex
                 app = Application(
                 app_root,
                 "xiaowennuan",
@@ -956,6 +976,8 @@ class Bridge:
                 config=config,
                 provider=provider,
                 embedding_provider=self.embedding_provider,
+                index_factory=(CompactMemoryIndex if self.config.get('memory', {}).get('compact_index_enabled', False)
+                    else MemoryIndex),
                 )
                 from .bounded_embeddings import bound_index_embeddings
                 bound_index_embeddings(app.index)
@@ -993,7 +1015,8 @@ class Bridge:
             app.conversation.runtime_events = self.runtime_events
             app.conversation.workspace_view = self.workspace_view
             app.conversation.outcome_sink = self._procedure_outcome
-            app.conversation.environment_getter = lambda _scope=message.scope: self.environment_snapshot(_scope)
+            app.conversation.environment_getter = lambda _scope=message.scope: self.environment_snapshot(_scope, include_personal=False)
+            app.conversation.personal_context_getter = lambda query, _scope=message.scope: self._personal_context(_scope, query)
             app.conversation.batch_should_yield = lambda key, _scope=message.scope: self._batch_yield_reason(key, _scope)
             app.conversation.collect_unread = self._collect_unread
             app.conversation.is_unread_batch = lambda key: self.input_inbox.batch_root(key) == key
@@ -2277,6 +2300,15 @@ class Bridge:
                     (answer.body_markdown, answer.ref, time.time(),
                      json.dumps(answer.payload.get("reply_parts", [answer.body_markdown]), ensure_ascii=False), output_key),
                 )
+                stored_envelope = json.loads(db.execute('SELECT envelope FROM deliveries WHERE id=?',
+                                                        (output_key,)).fetchone()[0])
+                previous_versions = stored_envelope.pop('personal_note_versions', None)
+                versions = answer.payload.get('personal_note_versions', {})
+                if versions:
+                    stored_envelope['personal_note_versions'] = versions
+                if versions or previous_versions:
+                    db.execute('UPDATE deliveries SET envelope=? WHERE id=?',
+                               (json.dumps(stored_envelope, ensure_ascii=False), output_key))
                 db.execute("UPDATE computer_reports SET state='prepared' WHERE delivery_id=? AND state IN ('waiting','generating')",
                            (message.key,))
                 prepared = self._delivery_result(db, output_key)
@@ -2417,13 +2449,13 @@ class Bridge:
                     if status != "sent" or type(part_index) is not int or not 0 <= part_index < len(parts):
                         raise ValueError("invalid part acknowledgement")
                     if part_index < completed:
-                        if row[3] == 'sent' and row[8] == 'autonomy':
+                        if row[3] == 'sent':
                             self._confirm_personal_share(row[1], row[7], row[6])
                         return {"status": row[3], "sent_parts": completed}
                     if part_index != completed:
                         raise Conflict("parts must be acknowledged in order")
                 if row[3] == status:
-                    if status == 'sent' and row[8] == 'autonomy':
+                    if status == 'sent':
                         self._confirm_personal_share(row[1], row[7], row[6])
                     return {"status": status}
                 if row[3] != "sending":
@@ -2474,7 +2506,7 @@ class Bridge:
                     if self._is_owner(original):
                         self.activities.on_chat_delivered()
             self._delivery_event(key, row[1], next_status, end, report_ref=row[5] or '')
-            if next_status == 'sent' and row[8] == 'autonomy':
+            if next_status == 'sent':
                 self._confirm_personal_share(row[1], row[7], acknowledged_at)
             # Preserve the legacy whole-reply acknowledgement response shape.
             return {"status": next_status, **({"sent_parts": end} if part_index is not None else {})}

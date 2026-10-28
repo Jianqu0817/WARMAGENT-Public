@@ -135,6 +135,7 @@ serial = ""
 keyboard_ime = "com.android.adbkeyboard/.AdbIME"
 
 [bridge.memory]
+compact_index_enabled = true # binary vectors / sparse TF-IDF; legacy generations remain readable
 # Current records remain searchable; graph/theme generations merge separately.
 incremental_index_enabled = true
 index_merge_delay_seconds = 30

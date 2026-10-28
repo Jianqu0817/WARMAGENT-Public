@@ -150,6 +150,32 @@ async def test_casual_share_waits_but_owner_reports_and_failures_are_not_suppres
 
 
 @pytest.mark.asyncio
+async def test_plain_idle_contact_uses_private_outbox_and_existing_share_interval(tmp_path):
+    bridge, provider = make_bridge(tmp_path)
+    route = incoming('private', sender='owner')
+    text = '有点想找你聊天，这会儿忙不忙？'
+    try:
+        bridge.register_route(route)
+        bridge.activities.checkpoint(protocol={'activity_id': 'idle-chat',
+            'notification_pending': {'text': text, 'note_ids': [], 'owner_requested': False}})
+        result = await bridge._activity_notify(text)
+        assert result['status'] == 'queued'
+        delivery = pending_deliveries(bridge.path, route.scope, kind='autonomy')[0]
+        await bridge.claim(delivery['id'])
+        await bridge.acknowledge(delivery['id'], 'sent', 0)
+        assert not bridge.self_direction.share_ready(route.scope, time.time())
+        next_text = '想再聊几句。'
+        bridge.activities.checkpoint(protocol={'activity_id': 'idle-chat-next',
+            'notification_pending': {'text': next_text, 'note_ids': [], 'owner_requested': False}})
+        result = await bridge._activity_notify(next_text)
+        assert result['status'] == 'deferred' and result['reason'] == 'share_cooldown'
+        assert bridge.personal_space.list(route.scope) == []
+        assert not provider.requests
+    finally:
+        await bridge.close()
+
+
+@pytest.mark.asyncio
 async def test_receipt_projection_failure_does_not_reopen_delivery_and_ack_repairs_it(tmp_path, monkeypatch):
     bridge, _ = make_bridge(tmp_path)
     route = incoming('private', sender='owner')

@@ -167,3 +167,29 @@ def test_explicit_reply_and_recent_complete_turn_survive_window(context_factory)
     assert len(selected) == 20
     assert pinned_id in selected
     assert {f"u{i}" for i in range(14, 24)} <= selected
+
+
+def test_explicit_recent_read_keeps_requested_window_before_unrelated_dialogue(context_factory):
+    fixture = context_factory
+    store = fixture.context.store
+    timeline = [{'message_id': f'ambient{i}', 'sender_id': 'other', 'text': f'本群原话{i}'} for i in range(15)]
+    baseline, _ = _run(fixture, text='往上面读取最近的15条聊天看看他们在说什么', recent_messages=timeline)
+    ceiling = sum(len(json.dumps(m, ensure_ascii=False).encode('utf-8')) + 32 for m in baseline) + 500
+    records = []
+    for i in range(3):
+        user = _raw(store, f'u{i}', '无关旧问题' * 400)
+        answer = _raw(store, f'a{i}', '无关旧回复' * 400, role='assistant', reply_to=user.ref)
+        records.extend((user, answer))
+    store.commit(records, 'seed-long-dialogue')
+    with sqlite3.connect(fixture.bridge.path) as db:
+        db.executemany("INSERT INTO deliveries(id,scope,fingerprint,status,updated) VALUES(?,?,?,'sent',0)",
+                       [(f'u{i}', fixture.context.group_scope, f'fixture-{i}') for i in range(3)])
+    fixture.context.working_context_tokens = ceiling
+    fixture.context.budget.fits = lambda messages, tools: True
+    messages, explanation = _run(fixture, text='往上面读取最近的15条聊天看看他们在说什么',
+                                  recent_messages=timeline)
+    envelope = json.loads(messages[-1]['content'].split('\n', 1)[1])
+    assert [m['message_id'] for m in envelope['recent_messages']] == [f'ambient{i}' for i in range(15)]
+    assert explanation['ongoing_dialogue_turns'] < 3
+    assert envelope['recent_messages_status']['retained_messages'] == 15
+    assert explanation['context_stats']['budget_trimmed_units'] > 0

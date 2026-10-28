@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy import sparse
 
 from myatri.contracts import digest
 from myatri.memory.graph import MemoryGraph
@@ -40,11 +41,14 @@ class FastMemoryGraph(MemoryGraph):
             candidate_anchor_valid = np.isin(candidate_anchors, list(nodes))
             for query_start in range(0, row_count, self._QUERY_BLOCK):
                 query_end = min(query_start + self._QUERY_BLOCK, row_count)
-                query_rows = [np.asarray(row["vector"], dtype=float) for row in index.rows[query_start:query_end]]
-                query_matrix = np.stack([
-                    query / norm if (norm := np.linalg.norm(query)) != 0 else np.zeros_like(query)
-                    for query in query_rows
-                ])
+                if sparse.issparse(index.matrix):
+                    query_matrix = index.matrix[query_start:query_end]
+                else:
+                    query_rows = [np.asarray(row["vector"], dtype=float) for row in index.rows[query_start:query_end]]
+                    query_matrix = np.stack([
+                        query / norm if (norm := np.linalg.norm(query)) != 0 else np.zeros_like(query)
+                        for query in query_rows
+                    ])
                 best: list[list[tuple[int, float]]] = [[] for _ in range(query_end - query_start)]
                 exact_scores_by_query: list[np.ndarray | None] = (
                     [None] * len(best) if row_count > self._CANDIDATE_BLOCK else []
@@ -53,6 +57,8 @@ class FastMemoryGraph(MemoryGraph):
                 for candidate_start in range(0, row_count, self._CANDIDATE_BLOCK):
                     candidate_end = min(candidate_start + self._CANDIDATE_BLOCK, row_count)
                     scores = query_matrix @ index.matrix[candidate_start:candidate_end].T
+                    if sparse.issparse(scores):
+                        scores = scores.toarray()
                     for local_query, row_index in enumerate(range(query_start, query_end)):
                         row = index.rows[row_index]
                         origin = anchors[row["ref"]]
@@ -80,12 +86,16 @@ class FastMemoryGraph(MemoryGraph):
                                 tolerance = np.finfo(float).eps * max(1, index.dimension) * 4 * max(1.0, abs(boundary))
                                 near_boundary = np.flatnonzero(np.abs(combined_scores - boundary) <= tolerance)
                                 if len(near_boundary):
+                                    def exact_query_scores():
+                                        query = query_matrix[local_query]
+                                        product = index.matrix @ (query.T if sparse.issparse(query) else query)
+                                        return product.toarray().ravel() if sparse.issparse(product) else product
                                     if not exact_scores_by_query:
-                                        exact_scores = index.matrix @ query_matrix[local_query]
+                                        exact_scores = exact_query_scores()
                                     else:
                                         exact_scores = exact_scores_by_query[local_query]
                                         if exact_scores is None:
-                                            exact_scores = index.matrix @ query_matrix[local_query]
+                                            exact_scores = exact_query_scores()
                                             exact_scores_by_query[local_query] = exact_scores
                                     combined_scores[near_boundary] = exact_scores[combined_indices[near_boundary]]
                                 partitioned = np.argpartition(combined_scores, len(combined_scores) - k)
