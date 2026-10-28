@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="__CSRF__"><meta name="color-scheme" content="dark light">
+  <title>WARMAGENT · 操作台</title>
+  <link rel="stylesheet" href="/assets/control_console.css">
+  <script src="/assets/control_console.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/">W<span class="brand-dot">●</span><span>WARMAGENT<small>本机操作台</small></span></a>
+      <div class="nav-label">工作区</div>
+      <nav aria-label="页面导航">
+        <button class="nav active" data-view="home"><span>◈</span>总览与启动</button>
+        <button class="nav" data-view="channels"><span>⇄</span>渠道与工具</button>
+        <button class="nav" data-view="settings"><span>⚙</span>配置与安装</button>
+        <button class="nav" data-view="runs"><span>≡</span>任务与输出 <b id="run-count">0</b></button>
+        <button class="nav" data-view="docs"><span>▤</span>文档与旧入口</button>
+      </nav>
+      <div class="sidebar-bottom"><span class="status-dot"></span>仅本机访问<small id="project-name">WARMAGENT</small><small>同一份记忆 · 同一个主脑</small></div>
+    </aside>
+    <main>
+      <header><div><span class="eyebrow">YOUR AGENT, AT HOME</span><h1 id="page-title">把一切，接回同一个入口。</h1></div><button id="refresh" class="quiet">刷新状态 ↻</button></header>
+      <div id="notice" role="status" aria-live="polite" hidden></div>
+      <section id="view-home" class="view">
+        <div class="hero"><div><div class="pill">WARMAGENT CONTROL</div><h2>聊天、探索，<br>从这里开始。</h2><p>选择今天相处的方式。记忆与心跳继续沿用，<br>渠道、工具和任务都在同一张桌面上。</p><div class="hero-actions"><button class="primary" data-action="web_live">启动本地聊天 ↗</button><button class="secondary" data-action="web_offline">先体验离线版</button></div></div><div class="orbit" aria-hidden="true"><div class="orbit-ring"></div><div class="orb">w</div><span class="orbit-tag tag-one">记忆</span><span class="orbit-tag tag-two">自主</span><span class="orbit-tag tag-three">行动</span></div></div>
+        <div id="health" class="health-grid" aria-label="服务监听状态"></div>
+        <div class="section-heading"><h2>常用页面</h2><span>已有服务可直接打开</span></div><div id="page-links" class="link-grid"></div>
+        <div class="section-heading"><h2>选择聊天模式</h2><span>同一运行目录只开一种</span></div><div id="chat-actions" class="card-grid"></div>
+        <p class="hint">打开操作台不会自动启动、停止或切换聊天服务。关闭操作台也不会结束已经启动的聊天。</p>
+      </section>
+      <section id="view-channels" class="view" hidden>
+        <div class="section-heading"><h2>连接你的日常</h2><span>登录在原客户端完成</span></div><div id="channel-actions" class="card-grid"></div>
+        <div class="section-heading"><h2>观察与资料</h2><span>原有统计和活动控制继续保留</span></div><div id="observe-actions" class="card-grid"></div>
+      </section>
+      <section id="view-settings" class="view" hidden>
+        <div class="section-heading"><h2>常用设置</h2><button id="load-settings" class="quiet">重新加载</button></div>
+        <p class="hint">保存时备份原文件；设置在下次正常启动时加载。运行中的群聊回复概率、活动暂停与唤醒，请在运行监视页调整。</p>
+        <div id="settings-form"></div>
+        <div class="section-heading"><h2>本机配置文件</h2><span>高级选项与令牌在本机编辑器中修改</span></div><div id="edit-files" class="file-grid"></div>
+        <div class="section-heading"><h2>安装、绑定与登录</h2><span>仅在点击后执行</span></div><div id="setup-actions" class="card-grid"></div>
+        <div class="section-heading"><h2>维护与检查</h2><span>测试与性能基准按需运行</span></div><div id="maintenance-actions" class="card-grid"></div>
+      </section>
+      <section id="view-runs" class="view" hidden>
+        <div class="section-heading"><h2>本次操作台的任务</h2><span id="task-summary">尚无任务</span></div>
+        <p class="hint">“运行中”表示入口进程尚未退出，业务是否就绪请结合日志和服务状态判断。扫码、密钥、终端聊天在独立窗口操作。</p>
+        <div class="file-grid"><select id="service-log" aria-label="已有服务日志"><option value="chat">聊天服务日志</option><option value="reader">Reader运行日志</option><option value="reader_error">Reader错误日志</option><option value="monitor">监视页错误日志</option><option value="context">上下文页错误日志</option></select><button id="read-service-log" class="quiet">读取已有日志</button></div>
+        <div class="runs-layout"><div id="run-list" class="run-list"></div><article class="output-panel"><div class="output-head"><h3 id="output-title">操作输出</h3><button id="refresh-log" class="quiet">刷新输出</button></div><pre id="output">选择左侧任务查看输出。原服务日志仍保存在 var/logs。</pre></article></div>
+      </section>
+      <section id="view-docs" class="view" hidden>
+        <div class="section-heading"><h2>查文档，找入口</h2><span>只读取本项目文档</span></div>
+        <input id="doc-search" type="search" placeholder="搜索文档名称或旧 CMD 名称" aria-label="搜索文档和入口">
+        <div class="docs-layout"><div id="doc-list" class="doc-list"></div><article class="document"><h3 id="doc-title">使用顺序</h3><pre id="doc-text">1. 第一次使用：配置与安装 → 补齐缺失配置 → 填写本人账号与渠道。
+2. 本地聊天：录入模型密钥 → 选择本地网页或终端。
+3. 微信：打开微信登录 → 核验并绑定身份 → 启动微信聊天。
+4. QQ：打开NapCat登录，设置机器人账号、本人账号与令牌，再启动微信 + QQ。
+5. 看状态：打开运行监视、上下文或生活小本。
+
+旧 CMD 全部保留；下方的入口对照表可以按原文件名查找。</pre></article></div>
+        <div class="section-heading"><h2>旧 CMD 与现在的按钮</h2><span>兼容入口仍可直接使用</span></div><div class="table-scroll"><table><thead><tr><th>原入口</th><th>现在的位置</th><th>操作</th></tr></thead><tbody id="cmd-map"></tbody></table></div>
+      </section>
+      <footer id="footer">正在读取本机状态…</footer>
+    </main>
+  </div>
+</body>
+</html>

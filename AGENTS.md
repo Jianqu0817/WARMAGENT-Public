@@ -1,5 +1,7 @@
 # WARMAGENT-Public development
 
+2026-10-29 visual control console: Start.cmd / warmagent console opens independent loopback port8770; see docs/操作台与入口地图.md. It reuses fixed CMD targets, original chat lock/stop, credential windows and existing monitoring pages. Settings use field allowlists, revision checks and backups; no runtime or memory migration. Six new offline checks and temporary-browser UI verification ran in the development tree only. Public transplant checks are static/privacy only; do not claim public feature tests were run.
+
 - This is the owner-independent public source repository. Keep personal account bindings, private personas, memories, logs and credentials in ignored local files.
 - Public defaults use an example persona and no authenticated owner. Stable account IDs, never display names, authorize tools.
 - Preserve provenance, scope isolation, archive integrity, snapshot/CAS semantics, outbox receipts and unknown-effect handling.

@@ -1,5 +1,7 @@
 # 维护入口
 
+2026-10-29：Start.cmd→warmagent console→独立8770，可在聊天未启动时使用；console_catalog/console_settings/control_console及html/css/js为新切片。原CMD和共享记忆保留；配置修改CAS/备份后下次启动加载。Public移植未运行功能或性能测试，原文/凭据/设备均未迁入。[操作台契约与旧入口](操作台与入口地图.md)。
+
 ## 2026-10-29 文档交接
 
 最新公开功能说明入口为[README](../README.md)、[架构地图](ARCHITECTURE.md)、[部署说明](DEPLOYMENT.md)、[功能说明](FEATURES_2026-10-29.md)、[记忆评测](MEMORY_EVALUATION.md)、[路线图](ROADMAP.md)和[公开状态](STATUS.md)。

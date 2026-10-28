@@ -46,3 +46,7 @@
 紧凑索引把 JSON 行元数据与向量 sidecar 分开：float64 .npy 以只读 mmap 加载，TF-IDF 使用 CSR .npz。发布仍校验文件摘要、空间身份与水位，并沿用原单调 current 发布；构建失败保留原 current。紧凑读写器读取旧格式；旧读写器不读取紧凑格式，切回旧代码前须先由紧凑读写器将 current 回退到已验证的旧代际。
 
 公开版配置与本地个人资料分离；新功能验证使用临时合成库，不借用真实运行目录。功能细节见[近期功能说明](FEATURES_2026-10-29.md)，评测口径见[记忆评测说明](MEMORY_EVALUATION.md)。
+
+## 独立操作台
+
+`Start.cmd → __main__.py console → control_console.py` 提供独立8770界面与control-console.lock，不创建Bridge或新模型。console_catalog固定原入口和交互方式，console_settings白名单TOML/CAS/备份；html/css/js实现总览、渠道、配置、任务及文档五页。原监视/上下文/生活小本继续使用已有服务。[操作台契约和CMD对照](操作台与入口地图.md)。

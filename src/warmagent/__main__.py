@@ -9,6 +9,10 @@ from pathlib import Path
 def parser():
     root = argparse.ArgumentParser(prog="python -m warmagent")
     commands = root.add_subparsers(dest="command", required=True)
+    console = commands.add_parser('console', help='打开独立的本机可视化操作台')
+    console.add_argument('--project', type=Path, default=Path(__file__).resolve().parents[2])
+    console.add_argument('--port', type=int, default=8770)
+    console.add_argument('--no-browser', action='store_true')
     for name in ("prepare", "check", "bind", "chat", "web", "wechat", "dual", "versions"):
         command = commands.add_parser(name)
         command.add_argument("--config", type=Path, default=Path("config/bridge.local.toml"))
@@ -34,6 +38,12 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
+    if args.command == 'console':
+        from .control_console import serve
+        try:
+            return asyncio.run(serve(args))
+        except KeyboardInterrupt:
+            return
     from . import launch
     logger = logging.getLogger("warmagent")
     previous_level = logger.level

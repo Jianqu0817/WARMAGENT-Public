@@ -5,5 +5,5 @@ if not exist ".venv\Scripts\python.exe" (
   echo Run Setup.cmd first.
   exit /b 1
 )
-.venv\Scripts\python.exe -m pytest tests/test_perf_archive.py tests/test_perf_graph.py tests/test_perf_database.py tests/test_personal_space.py tests/test_self_direction.py tests/test_autonomy_choices.py tests/test_personal_autonomy.py tests/test_recent_chat.py tests/test_personal_life.py tests/test_compact_index.py tests/test_memory_evaluation.py -q
+.venv\Scripts\python.exe -m pytest tests/test_perf_archive.py tests/test_perf_graph.py tests/test_perf_database.py tests/test_personal_space.py tests/test_self_direction.py tests/test_autonomy_choices.py tests/test_personal_autonomy.py tests/test_recent_chat.py tests/test_personal_life.py tests/test_compact_index.py tests/test_memory_evaluation.py tests/test_control_console.py -q
 exit /b %errorlevel%

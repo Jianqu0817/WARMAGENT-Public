@@ -117,6 +117,10 @@ flowchart LR
 
 复现入口：[档案基准](benchmarks/perf_archive_lab.py) · [投递查询基准](benchmarks/perf_database_lab.py) · [精确图基准](benchmarks/perf_graph_lab.py)。整轮体验还由模型响应、网络与工具执行共同决定；这些数据清楚展示了我们在存储、查询和计算路径上的进展。
 
+## 一个入口，管理整个小温暖
+
+双击 **[Start.cmd](Start.cmd)**，打开本机可视化操作台：切换微信/QQ/本地聊天入口、编辑常用配置、扫码登录、安装工具、查看任务输出和已有统计页面。聊天没启动也能使用；关闭操作台不会停止聊天。原CMD继续兼容，文档和入口对照集中在同一页。[操作台说明](docs/操作台与入口地图.md)。
+
 ## 快速开始
 
 Windows 安装 Git、Python 3.12 和 [uv](https://docs.astral.sh/uv/getting-started/installation/)，然后执行：
@@ -125,10 +129,10 @@ Windows 安装 Git、Python 3.12 和 [uv](https://docs.astral.sh/uv/getting-star
 git clone https://github.com/Jianqu0817/WARMAGENT-Public.git
 cd WARMAGENT-Public
 .\Setup.cmd
-.\Start-Local-Web-Offline.cmd
+.\Start.cmd
 ```
 
-浏览器本地聊天默认在 `http://127.0.0.1:8769`。离线模式使用测试后端，不连接真实模型，也不能用它衡量真实回复质量。纯终端可运行 `Start-Local-Offline.cmd`。
+操作台默认在 `http://127.0.0.1:8770`；第一次体验可在操作台选择“本地网页 · 离线体验”。浏览器本地聊天默认在 `http://127.0.0.1:8769`。离线模式使用测试后端，不连接真实模型，也不能用它衡量真实回复质量。纯终端可运行 `Start-Local-Offline.cmd`。
 
 接真实模型、微信或 QQ 前，按[部署说明](docs/DEPLOYMENT.md)配置自己的账号和服务。所有运行模式共用 `service.lock`，同一运行目录只开一个聊天进程。
 
